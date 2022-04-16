@@ -2,7 +2,7 @@ motor
 PyJWT
 bcrypt
 uvicorn
-pymongo
+pymongo==3.12.0
 python-decouple
 fastapi
 pydantic[email]
