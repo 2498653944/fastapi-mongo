@@ -12,7 +12,7 @@ database = client.students
 
 student_collection = database.get_collection('students_collection')
 admin_collection = database.get_collection('admins')
-lpldata_collection = database.get_collection('lpldata')
+lpldata_collection = database.get_collection('MatchData')
 
 
 async def add_admin(admin_data: dict) -> dict:
@@ -75,5 +75,5 @@ async def get_playerinfo(id: str, timerange=['020-01-30T00:00:00.000Z','2022-08-
         {"$group": {"_id": "$data.matchInfos.teamInfos.playerInfos.playerName",
                     "battleDetail": {"$push": "$data.matchInfos.teamInfos.playerInfos.battleDetail"}}},
         {"$sort": {"avgKill": -1}}]
-    data_info = await lpldata_collection.aggregate(query)
+    data_info = await lpldata_collection.aggregate(query).to_list()
     return data_info
