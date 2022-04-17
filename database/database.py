@@ -54,7 +54,7 @@ async def update_student_data(id: str, data: dict):
         return True
 
 
-async def get_playerinfo(id: str, timerange:list):
+async def get_playerinfo(id: str, timerange=['020-01-30T00:00:00.000Z','2022-08-23T00:00:00.000Z']):
     """:arg
         list[ISOtimeString]
     """

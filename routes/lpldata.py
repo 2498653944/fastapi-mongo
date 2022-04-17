@@ -12,8 +12,9 @@ router = APIRouter()
 hash_helper = CryptContext(schemes=["bcrypt"])
 
 
-@router.get("/v1/{id}", response_description="Student data retrieved")
-async def get_student_data(id):
+@router.post("/v1/{id}", response_description="Student data retrieved")
+async def get_student_data(id:int,data:dict):
+    print(dict)
     student = await get_playerinfo(id)
     return ResponseModel(student, "Student data retrieved successfully") \
         if student \

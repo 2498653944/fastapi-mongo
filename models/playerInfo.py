@@ -7,7 +7,7 @@ class PlyaerInfoModel(BaseModel):
     playerId: int = Field(...)
     playerName: str = Field(...)
     playerLocation: str = Field(...)
-    playerAvatar: str = AnyHttpUrl(...)
+    playerAvatar: str = Field(...)
     heroId: int = Field(...)
     heroName: str = Field(...)
     items: List[Dict] = Field(...)
