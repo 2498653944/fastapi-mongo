@@ -54,7 +54,9 @@ async def update_student_data(id: str, data: dict):
         return True
 
 
-async def get_playerinfo(name: str, timerange=['020-01-30T00:00:00.000Z','2022-08-23T00:00:00.000Z']):
+async def get_playerinfo(name: str,
+                         players:list,
+                         timerange=['020-01-30T00:00:00.000Z','2022-08-23T00:00:00.000Z']):
     """:arg
         list[ISOtimeString]
     """
@@ -69,7 +71,7 @@ async def get_playerinfo(name: str, timerange=['020-01-30T00:00:00.000Z','2022-0
         {"$unwind": "$data.matchInfos"},
         {"$unwind": "$data.matchInfos.teamInfos"},
         {"$unwind": "$data.matchInfos.teamInfos.playerInfos"},
-        {"$match": {"data.matchInfos.teamInfos.playerInfos.playerName": name}},
+        {"$match": {"data.matchInfos.teamInfos.playerInfos.playerName": {"$in":players}}},
   #      {"$group": {"_id": "$data.matchInfos.teamInfos.playerInfos.playerName",
   #                  "avgKill": {"$avg": "$data.matchInfos.teamInfos.playerInfos.battleDetail.kills"}}},
         {"$group": {"_id": "$data.matchInfos.teamInfos.playerInfos.playerName",
