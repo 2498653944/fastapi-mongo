@@ -75,7 +75,9 @@ async def get_playerinfo(name: str,
   #      {"$group": {"_id": "$data.matchInfos.teamInfos.playerInfos.playerName",
   #                  "avgKill": {"$avg": "$data.matchInfos.teamInfos.playerInfos.battleDetail.kills"}}},
         {"$group": {"_id": "$data.matchInfos.teamInfos.playerInfos.playerName",
-                    "battleDetail": {"$push": "$data.matchInfos.teamInfos.playerInfos.battleDetail"}}},
+                    "battleDetail": {"$push": "$data.matchInfos.teamInfos.playerInfos.battleDetail"}},
+                    "data": {"$push": "$data.matchInfos.teamInfos.playerInfos"},
+         },
         {"$sort": {"avgKill": -1}}]
     data_info = await lpldata_collection.aggregate(query).to_list(length=None)
     return data_info
