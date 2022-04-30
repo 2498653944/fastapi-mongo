@@ -94,7 +94,7 @@ async def get_player_hero_relationship(position: str):
                                        "heroName": "$data.matchInfos.teamInfos.playerInfos.heroName"}}
                     }}
     ]
-    given_position = {"$match":{"$_id":position}}
+    given_position = {"$match":{"_id":position}}
     if position:
         query.append(given_position)
     data = await lpldata_collection.aggregate(query).to_list(length=None)
