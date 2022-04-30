@@ -54,31 +54,45 @@ async def update_student_data(id: str, data: dict):
         return True
 
 
-async def get_playerinfo(name: str,
-                         players: list,
-                         timerange=['020-01-30T00:00:00.000Z', '2022-08-23T00:00:00.000Z']):
+async def get_playerinfo(query_data):
     """:arg
         list[ISOtimeString]
     """
     query = [
-        {"$match": {
-            "data.matchTime": {"$gte": timerange[0],
-                               "$lt": timerange[1]}
-        }
-        },
-        {"$match": {"data.seasonName": "2022LPL春季赛季后赛"}},
-        #       {"$match": {"data.matchInfos.matchWin": 29}},
-        {"$unwind": "$data.matchInfos"},
-        {"$unwind": "$data.matchInfos.teamInfos"},
-        {"$unwind": "$data.matchInfos.teamInfos.playerInfos"},
-        {"$match": {"data.matchInfos.teamInfos.playerInfos.playerName": {"$in": players}}},
-        #      {"$group": {"_id": "$data.matchInfos.teamInfos.playerInfos.playerName",
-        #                  "avgKill": {"$avg": "$data.matchInfos.teamInfos.playerInfos.battleDetail.kills"}}},
-        {"$group": {"_id": "$data.matchInfos.teamInfos.playerInfos.playerName",
-                    "battleDetail": {"$push": "$data.matchInfos.teamInfos.playerInfos.battleDetail"}},
-         "data": {"$push": "$data.matchInfos.teamInfos.playerInfos"},
-         },
-        {"$sort": {"avgKill": -1}}]
+        #   {"$match": {"data.matchInfos.matchWin": 29}},
+    ]
+    time_range = query_data.time_range
+    time_condition = {"$match": {
+        "data.matchTime": {"$gte": time_range[0],
+                           "$lt": time_range[1]}
+    }}
+
+    if time_range:
+        query.append(time_condition)
+    season_name = query_data.season_name
+    season_condition = {"$match": {"data.seasonName": season_name}}
+    if season_name:
+        query.append(season_condition)
+
+    match_id = query_data.match_id
+    match_condition = {"$match": {"data.matchId": match_id}}
+    if match_id:
+        query.append(match_condition)
+
+    unwind_condition = [{"$unwind": "$data.matchInfos"},
+                        {"$unwind": "$data.matchInfos.teamInfos"},
+                        {"$unwind": "$data.matchInfos.teamInfos.playerInfos"}]
+    query.extend(unwind_condition)
+
+    players = query_data.players
+    player_condition = {"$match": {"data.matchInfos.teamInfos.playerInfos.playerName": {"$in": players}}}
+    if players:
+        query.append(player_condition)
+    agg_condition = [{"$group": {"_id": "$data.matchInfos.teamInfos.playerInfos.playerName",
+                                 "battleDetail": {"$push": "$data.matchInfos.teamInfos.playerInfos.battleDetail"}},
+                      "data": {"$push": "$data.matchInfos.teamInfos.playerInfos"},
+                      }]
+    query.extend(agg_condition)
     data_info = await lpldata_collection.aggregate(query).to_list(length=None)
     return data_info
 
@@ -91,13 +105,16 @@ async def get_player_hero_relationship(position: str):
         {"$unwind": "$data.matchInfos.teamInfos.playerInfos"},
         {"$group": {"_id": "$data.matchInfos.teamInfos.playerInfos.playerLocation",
                     "hero": {"$push": {"playerName": "$data.matchInfos.teamInfos.playerInfos.playerName",
-                                       "heroName": "$data.matchInfos.teamInfos.playerInfos.heroName"}}
+                                       "playerId": "$data.matchInfos.teamInfos.playerInfos.playerId",
+                                       "heroName": "$data.matchInfos.teamInfos.playerInfos.heroName",
+                                       "heroId": "$data.matchInfos.teamInfos.playerInfos.heroId"
+                                       }
+                             }
                     }}
     ]
-    given_position = {"$match":{"_id":position}}
-    if position:
-        query.append(given_position)
+    given_position = {"$match": {"_id": position}}
+    query.append(given_position)
+    if position == "ALL":
+        query.pop()
     data = await lpldata_collection.aggregate(query).to_list(length=None)
     return data
-
-

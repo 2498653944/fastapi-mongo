@@ -7,8 +7,9 @@ from auth.jwt_handler import signJWT
 from database.database import get_playerinfo, get_player_hero_relationship
 from models.playerInfo import PlyaerInfoModel, ResponseModel, ErrorResponseModel
 
-from typing import Optional
+from typing import Optional,List
 from enum import Enum
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -21,14 +22,19 @@ class PositionName(str, Enum):
     MID = "MID"
     BOT = "BOT"
     SUP = "SUP"
+    ALL = "ALL"
 
 
-@router.post("/player/{id}", response_description="player_battle_data")
-async def get_player_data(id: str, data: dict):
-    print(data)
-    players = data.get("players")
-    print(players)
-    student = await get_playerinfo(id, players)
+class Item(BaseModel):
+    time_range: Optional[List[str]] = []
+    season_name: Optional[str] = None
+    match_id: Optional[List[int]] = []
+    players: Optional[List[str]] = []
+
+
+@router.post("/player/", response_description="player_battle_data")
+async def get_player_data(data: Item):
+    student = await get_playerinfo(data)
     return ResponseModel(student, "data retrieved successfully") \
         if student \
         else ErrorResponseModel("An error occured.", 404, "data doesn't exist.")
