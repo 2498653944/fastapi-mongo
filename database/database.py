@@ -55,8 +55,8 @@ async def update_student_data(id: str, data: dict):
 
 
 async def get_playerinfo(name: str,
-                         players:list,
-                         timerange=['020-01-30T00:00:00.000Z','2022-08-23T00:00:00.000Z']):
+                         players: list,
+                         timerange=['020-01-30T00:00:00.000Z', '2022-08-23T00:00:00.000Z']):
     """:arg
         list[ISOtimeString]
     """
@@ -67,17 +67,37 @@ async def get_playerinfo(name: str,
         }
         },
         {"$match": {"data.seasonName": "2022LPL春季赛季后赛"}},
- #       {"$match": {"data.matchInfos.matchWin": 29}},
+        #       {"$match": {"data.matchInfos.matchWin": 29}},
         {"$unwind": "$data.matchInfos"},
         {"$unwind": "$data.matchInfos.teamInfos"},
         {"$unwind": "$data.matchInfos.teamInfos.playerInfos"},
-        {"$match": {"data.matchInfos.teamInfos.playerInfos.playerName": {"$in":players}}},
-  #      {"$group": {"_id": "$data.matchInfos.teamInfos.playerInfos.playerName",
-  #                  "avgKill": {"$avg": "$data.matchInfos.teamInfos.playerInfos.battleDetail.kills"}}},
+        {"$match": {"data.matchInfos.teamInfos.playerInfos.playerName": {"$in": players}}},
+        #      {"$group": {"_id": "$data.matchInfos.teamInfos.playerInfos.playerName",
+        #                  "avgKill": {"$avg": "$data.matchInfos.teamInfos.playerInfos.battleDetail.kills"}}},
         {"$group": {"_id": "$data.matchInfos.teamInfos.playerInfos.playerName",
                     "battleDetail": {"$push": "$data.matchInfos.teamInfos.playerInfos.battleDetail"}},
-                    "data": {"$push": "$data.matchInfos.teamInfos.playerInfos"},
+         "data": {"$push": "$data.matchInfos.teamInfos.playerInfos"},
          },
         {"$sort": {"avgKill": -1}}]
     data_info = await lpldata_collection.aggregate(query).to_list(length=None)
     return data_info
+
+
+async def get_player_hero_relationship(position: str):
+    query = [
+        {"$match": {"data.seasonName": "2022LPL春季赛季后赛"}},
+        {"$unwind": "$data.matchInfos"},
+        {"$unwind": "$data.matchInfos.teamInfos"},
+        {"$unwind": "$data.matchInfos.teamInfos.playerInfos"},
+        {"$group": {"_id": "$data.matchInfos.teamInfos.playerInfos.playerLocation",
+                    "hero": {"$push": {"playerName": "$data.matchInfos.teamInfos.playerInfos.playerName",
+                                       "heroName": "$data.matchInfos.teamInfos.playerInfos.heroName"}}
+                    }}
+    ]
+    given_position = {"$match":{"$_id":position}}
+    if position:
+        query.append(given_position)
+    data = await lpldata_collection.aggregate(query).to_list(length=None)
+    return data
+
+
