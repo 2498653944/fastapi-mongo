@@ -15,6 +15,8 @@ router = APIRouter()
 
 hash_helper = CryptContext(schemes=["bcrypt"])
 
+import datetime
+
 
 class PositionName(str, Enum):
     TOP = "TOP"
@@ -26,7 +28,7 @@ class PositionName(str, Enum):
 
 
 class Item(BaseModel):
-    time_range: Optional[List[str]] = []
+    time_range: Optional[List[str]] = [datetime.datetime(2021,1,1,0,0,1).isoformat(),datetime.datetime.now().isoformat()]
     season_name: Optional[str] = None
     match_id: Optional[List[int]] = []
     players: Optional[List[str]] = []
