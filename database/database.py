@@ -61,21 +61,22 @@ async def get_playerinfo(query_data):
     query = [
         #   {"$match": {"data.matchInfos.matchWin": 29}},
     ]
+    print(query_data)
     time_range = query_data.time_range
     time_condition = {"$match": {
         "data.matchTime": {"$gte": time_range[0],
                            "$lt": time_range[1]}
     }}
-
     if time_range:
         query.append(time_condition)
+
     season_name = query_data.season_name
     season_condition = {"$match": {"data.seasonName": season_name}}
     if season_name:
         query.append(season_condition)
 
     match_id = query_data.match_id
-    match_condition = {"$match": {"data.matchId": match_id}}
+    match_condition = {"$match": {"data.matchId": {"$in": match_id}}}
     if match_id:
         query.append(match_condition)
 
@@ -88,18 +89,27 @@ async def get_playerinfo(query_data):
     player_condition = {"$match": {"data.matchInfos.teamInfos.playerInfos.playerName": {"$in": players}}}
     if players:
         query.append(player_condition)
+
     agg_condition = [{"$group": {"_id": "$data.matchInfos.teamInfos.playerInfos.playerName",
-                                 "battleDetail": {"$push": "$data.matchInfos.teamInfos.playerInfos.battleDetail"}},
-                      "data": {"$push": "$data.matchInfos.teamInfos.playerInfos"},
+                                 "matchName": {"$push": "$data.matchName"},
+                                 "matchBo": {"$push": "$data.matchInfos.bo"},
+                                 "minionKilled": {"$push": "$data.matchInfos.teamInfos.playerInfos.minionKilled"},
+                                 "battleDetail": {"$push": "$data.matchInfos.teamInfos.playerInfos.battleDetail"},
+                                 "damageDetail": {"$push": "$data.matchInfos.teamInfos.playerInfos.damageDetail"},
+                                 "DamageTakenDetail": {
+                                     "$push": "$data.matchInfos.teamInfos.playerInfos.DamageTakenDetail"},
+                                 "otherDetail": {"$push": "$data.matchInfos.teamInfos.playerInfos.otherDetail"},
+                                 "visionDetail": {"$push": "$data.matchInfos.teamInfos.playerInfos.visionDetail"}
+                                 },
                       }]
     query.extend(agg_condition)
+    print(query)
     data_info = await lpldata_collection.aggregate(query).to_list(length=None)
     return data_info
 
 
-async def get_player_hero_relationship(position: str):
+async def get_player_hero_relationship(position: str, season_name: str, start_time: str, end_time: str):
     query = [
-        {"$match": {"data.seasonName": "2022LPL春季赛季后赛"}},
         {"$unwind": "$data.matchInfos"},
         {"$unwind": "$data.matchInfos.teamInfos"},
         {"$unwind": "$data.matchInfos.teamInfos.playerInfos"},
@@ -112,6 +122,20 @@ async def get_player_hero_relationship(position: str):
                              }
                     }}
     ]
+
+    season_condition = {"$match": {"data.seasonName": season_name}}
+    if season_name:
+        query.insert(0, season_condition)
+
+    time_condition = {"$match": {
+        "data.matchTime": {"$gte": start_time,
+                           "$lt": end_time
+                           }}
+    }
+
+    if start_time and end_time:
+        query.insert(0, time_condition)
+
     given_position = {"$match": {"_id": position}}
     query.append(given_position)
     if position == "ALL":
