@@ -32,10 +32,11 @@ class PlyaerInfoModel(BaseModel):
         }
 
 
-def ResponseModel(data, message):
+def HeroDataResponseModel(data,length,message):
     return {
         "data": data,
         "code": 200,
+        "count": length,
         "message": message,
     }
 

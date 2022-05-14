@@ -63,11 +63,11 @@ async def get_playerinfo(query_data):
     ]
     print(query_data)
     time_range = query_data.time_range
-    time_condition = {"$match": {
-        "data.matchTime": {"$gte": time_range[0],
-                           "$lt": time_range[1]}
-    }}
     if time_range:
+        time_condition = {"$match": {
+            "data.matchTime": {"$gte": time_range[0],
+                               "$lt": time_range[1]}
+        }}
         query.append(time_condition)
 
     season_name = query_data.season_name
@@ -119,7 +119,9 @@ async def get_player_hero_relationship(position: str, season_name: str, start_ti
                                        "heroName": "$data.matchInfos.teamInfos.playerInfos.heroName",
                                        "heroId": "$data.matchInfos.teamInfos.playerInfos.heroId"
                                        }
-                             }
+                             },
+                    "count": {"$sum": 1}
+
                     }}
     ]
 
@@ -140,5 +142,8 @@ async def get_player_hero_relationship(position: str, season_name: str, start_ti
     query.append(given_position)
     if position == "ALL":
         query.pop()
+    total = 0
+    async for doc in lpldata_collection.aggregate(query):
+        total += doc["count"]
     data = await lpldata_collection.aggregate(query).to_list(length=None)
-    return data
+    return data,total
